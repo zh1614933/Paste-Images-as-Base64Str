@@ -1,7 +1,7 @@
 <idea-plugin>
-  <id>paste-images-as-base64str</id>
+  <id>github.com.zh1614933.Paste-Images-as-Base64Str</id>
   <name>Paste Images as Base64Str</name>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <vendor email="1614933708@qq.com" url="https://github.com/zh1614933/Paste-Images-as-Base64Str"/>
 
   <!--see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html-->
