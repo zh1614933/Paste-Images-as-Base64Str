@@ -36,10 +36,13 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
+import com.intellij.openapi.editor.actionSystem.EditorTextInsertHandler;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.Producer;
 import java.awt.Image;
+import java.awt.datatransfer.Transferable;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -47,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
  *
  * @author zhang.heng
  */
-public class PasteImageHandler extends EditorActionHandler {
+public class PasteImageHandler extends EditorActionHandler implements EditorTextInsertHandler {
     private static final Logger LOG = Logger.getInstance("img2md.PasteHandler");
     private final EditorActionHandler myOriginalHandler;
     private String[] types;
@@ -92,5 +95,10 @@ public class PasteImageHandler extends EditorActionHandler {
         if (myOriginalHandler != null) {
             myOriginalHandler.execute(editor, caret, dataContext);
         }
+    }
+
+    @Override
+    public void execute(Editor editor, DataContext dataContext, Producer<Transferable> producer) {
+
     }
 }

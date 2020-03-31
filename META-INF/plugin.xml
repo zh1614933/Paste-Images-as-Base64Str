@@ -1,5 +1,5 @@
-<idea-plugin version="2">
-  <id>github.com.zh1614933.Paste-Images-as-Base64Str</id>
+<idea-plugin>
+  <id>Paste-Images-as-Base64Str</id>
   <name>Paste Images as Base64Str</name>
   <version>1.0.0</version>
   <vendor email="1614933708@qq.com" url="https://github.com/zh1614933/Paste-Images-as-Base64Str"/>
@@ -10,14 +10,17 @@
 
   <description><![CDATA[
         Paste images into MarkDown( not only Markdown) documents directly from clipboard<br>
-        Images files are deposited in a configurable directory relative to the markdown document.
+        You can choose your save method, save as image file or string, save to gallery is temporarily not implemented.<br>
+        Images files are deposited in a configurable directory relative to the markdown document.<br>
+        The Images is converted to a string and saved at the end of the article.
         ]]></description>
 
   <change-notes><![CDATA[
         New Features:
         <ul>
             <li>Paste handler to use default ctrl-v to paste clipboard images</li>
-            <li>Added optional rescaling of pasted images scaleImage</li>
+            <li>You can choose your save method, save as image file or string</li>
+            <li>The Images is converted to a string and saved at the end of the article</li>
         </ul>
         ]]>
   </change-notes>
