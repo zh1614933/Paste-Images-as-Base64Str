@@ -4,11 +4,26 @@
 
 package img2md;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.intellij.ide.util.PropertiesComponent;
+
+import com.intellij.ui.components.JBComboBoxLabel;
+import groovy.swing.binding.JComboBoxProperties;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Vector;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.event.ListDataListener;
+import org.apache.commons.lang.StringUtils;
+import org.eclipse.jgit.api.Git;
+import org.herry.pic.dto.ComBoxGitDto;
+import org.herry.pic.dto.GitDto;
 
 /**
  * @author unknown
@@ -23,6 +38,7 @@ public class ImageInsertSettingsPanel extends JPanel implements ActionListener {
     //mode :  0:string;1:file;2:cloud
     private String mode = "0";
 
+    private static final String COMBO_BOX_CHANGED = "comboBoxChanged";
 
     public ImageInsertSettingsPanel() {
         initComponents();
@@ -186,6 +202,78 @@ public class ImageInsertSettingsPanel extends JPanel implements ActionListener {
         this.image2SaveAsCloud = image2SaveAsCloud;
     }
 
+    public JPanel getPanel5() {
+        return panel5;
+    }
+
+    public void setPanel5(JPanel panel5) {
+        this.panel5 = panel5;
+    }
+
+    public JLabel getLabelLocalPath() {
+        return labelLocalPath;
+    }
+
+    public void setLabelLocalPath(JLabel labelLocalPath) {
+        this.labelLocalPath = labelLocalPath;
+    }
+
+    public JTextField getTextFieldLocalPath() {
+        return textFieldLocalPath;
+    }
+
+    public void setTextFieldLocalPath(JTextField textFieldLocalPath) {
+        this.textFieldLocalPath = textFieldLocalPath;
+    }
+
+    public JLabel getLabelRemoteRepoUrl() {
+        return labelRemoteRepoUrl;
+    }
+
+    public void setLabelRemoteRepoUrl(JLabel labelRemoteRepoUrl) {
+        this.labelRemoteRepoUrl = labelRemoteRepoUrl;
+    }
+
+    public JTextField getTextFieldRemoteRepoUrl() {
+        return textFieldRemoteRepoUrl;
+    }
+
+    public void setTextFieldRemoteRepoUrl(JTextField textFieldRemoteRepoUrl) {
+        this.textFieldRemoteRepoUrl = textFieldRemoteRepoUrl;
+    }
+
+    public JLabel getLabelGitUserName() {
+        return labelGitUserName;
+    }
+
+    public void setLabelGitUserName(JLabel labelGitUserName) {
+        this.labelGitUserName = labelGitUserName;
+    }
+
+    public JTextField getTextFieldGitUserName() {
+        return textFieldGitUserName;
+    }
+
+    public void setTextFieldGitUserName(JTextField textFieldGitUserName) {
+        this.textFieldGitUserName = textFieldGitUserName;
+    }
+
+    public JLabel getLabelGitUserPassword() {
+        return labelGitUserPassword;
+    }
+
+    public void setLabelGitUserPassword(JLabel labelGitUserPassword) {
+        this.labelGitUserPassword = labelGitUserPassword;
+    }
+
+    public JPasswordField getTextFieldGitUserPassword() {
+        return textFieldGitUserPassword;
+    }
+
+    public void setTextFieldGitUserPassword(JPasswordField textFieldGitUserPassword) {
+        this.textFieldGitUserPassword = textFieldGitUserPassword;
+    }
+
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         // Generated using JFormDesigner non-commercial license
@@ -204,14 +292,30 @@ public class ImageInsertSettingsPanel extends JPanel implements ActionListener {
         panel2 = new JPanel();
         label2 = new JLabel();
 
+        panel5 = new JPanel();
+        labelLocalPath = new JLabel();
+        textFieldLocalPath = new JTextField();
+        labelRemoteRepoUrl = new JLabel();
+        textFieldRemoteRepoUrl = new JTextField();
+        labelGitUserName = new JLabel();
+        textFieldGitUserName = new JTextField();
+        labelGitUserPassword = new JLabel();
+        textFieldGitUserPassword = new JPasswordField();
+        labelGitHisChoices = new JLabel();
+        deleteButton = new JButton();
+        String gitConfigHisChoics = PropertiesComponent.getInstance().getValue("PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG_HIS_CHOICES", "");
+        Gson gson = new Gson();
+        Vector<ComBoxGitDto> gitDtoList = new Vector<ComBoxGitDto>();
+        gitDtoList = gson.fromJson(gitConfigHisChoics, new TypeToken<Vector<ComBoxGitDto>>(){}.getType());
 
+        comboBoxGitHisChoices = new JComboBox(gitDtoList);
         //======== this ========
         setLayout(new GridBagLayout());
         ((GridBagLayout) getLayout()).columnWidths = new int[]{0, 0};
         ((GridBagLayout) getLayout()).rowHeights = new int[]{5, 0, 5, 0, 0};
         ((GridBagLayout) getLayout()).columnWeights = new double[]{1.0, 1.0E-4};
         ((GridBagLayout) getLayout()).rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 1.0E-4};
-        initImageSaveModePanel();
+
         //======== panel1 ========
         {
             panel1.setBorder(new TitledBorder("File Properties"));
@@ -308,7 +412,79 @@ public class ImageInsertSettingsPanel extends JPanel implements ActionListener {
                     GridBagConstraints.CENTER, GridBagConstraints.BOTH,
                     new Insets(0, 0, 0, 0), 0, 0));
         }
+
+        //======== panel5 ========  设置git 本地路径， 远程仓库地址，用户名，密码
+        {
+            panel5.setBorder(new TitledBorder("Git Properties"));
+            panel5.setLayout(new GridBagLayout());
+            ((GridBagLayout) panel5.getLayout()).columnWidths = new int[]{0, 0, 0, 0, 0};
+            ((GridBagLayout) panel5.getLayout()).rowHeights = new int[]{0, 0, 0, 0};
+            ((GridBagLayout) panel5.getLayout()).columnWeights = new double[]{1.0, 1.0, 1.0, 0.0, 1.0E-4};
+            ((GridBagLayout) panel5.getLayout()).rowWeights = new double[]{0.0, 0.0, 0.0, 1.0E-4};
+
+            //---- labelLocalPath ----
+            labelLocalPath.setText("Local Path");
+            panel5.add(labelLocalPath, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+            panel5.add(textFieldLocalPath, new GridBagConstraints(1, 0, 2, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+
+            //---- labelRemoteRepoUrl ----
+            labelRemoteRepoUrl.setText("Remote Address");
+            panel5.add(labelRemoteRepoUrl, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+            panel5.add(textFieldRemoteRepoUrl, new GridBagConstraints(1, 1, 2, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+
+            //---- labelGitUserName ----
+            labelGitUserName.setText("User Name");
+            panel5.add(labelGitUserName, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+            panel5.add(textFieldGitUserName, new GridBagConstraints(1, 2, 2, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+
+            //---- labelGitUserPassword ----
+            labelGitUserPassword.setText("Password");
+            panel5.add(labelGitUserPassword, new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+            panel5.add(textFieldGitUserPassword, new GridBagConstraints(1, 3, 2, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+
+            //对于git的管理  选择历史记录，  delete按钮
+
+
+//            labelGitHisChoices.setText("Git Operation");
+//            panel5.add(labelGitHisChoices, new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+//                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+//                    new Insets(0, 0, 0, 0), 0, 0));
+
+            comboBoxGitHisChoices.setToolTipText("Git Choices");
+            panel5.add(comboBoxGitHisChoices, new GridBagConstraints(0, 4, 2, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+
+            deleteButton.setText("DELETE");
+            panel5.add(deleteButton, new GridBagConstraints(2, 4, 1, 1, 0.0, 0.0,
+                    GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                    new Insets(0, 0, 0, 0), 0, 0));
+
+
+        }
+        add(panel5, new GridBagConstraints(0, 4, 1, 4, 0.0, 0.0,
+                GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL,
+                new Insets(0, 0, 0, 0), 0, 0));
+
         // JFormDesigner - End of component initialization  //GEN-END:initComponents
+
+        initImageSaveModePanel();
     }
 
 
@@ -328,6 +504,22 @@ public class ImageInsertSettingsPanel extends JPanel implements ActionListener {
     private JLabel label6;
     private JPanel panel2;
     private JLabel label2;
+
+    private JPanel panel5;
+    private JLabel labelLocalPath;
+    private JTextField textFieldLocalPath;
+    private JLabel labelRemoteRepoUrl;
+    private JTextField textFieldRemoteRepoUrl;
+    private JLabel labelGitUserName;
+    private JTextField textFieldGitUserName;
+    private JLabel labelGitUserPassword;
+    private JPasswordField textFieldGitUserPassword;
+    private JLabel labelGitHisChoices;
+    private JComboBox comboBoxGitHisChoices;
+    private JButton deleteButton;
+
+
+
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 
     //选择图片保存方式 面板
@@ -351,8 +543,12 @@ public class ImageInsertSettingsPanel extends JPanel implements ActionListener {
             ((GridBagLayout) imageSaveModePanel.getLayout()).rowWeights = new double[]{0.0, 0.0, 0.0, 1.0E-4};
 
             saveModeChoose = new ButtonGroup();
-            image2SaveAsString = new JRadioButton("Save As String");
-            image2SaveAsFile = new JRadioButton("Save As File", true);
+            image2SaveAsString = new JRadioButton("Save As String", true);
+            changeVisibleBySaveType(SELECT_SAVE_AS_STRING);
+
+
+
+            image2SaveAsFile = new JRadioButton("Save As File");
             image2SaveAsCloud = new JRadioButton("Save As Cloud");
             saveModeChoose.add(image2SaveAsString);
             saveModeChoose.add(image2SaveAsFile);
@@ -376,33 +572,110 @@ public class ImageInsertSettingsPanel extends JPanel implements ActionListener {
         image2SaveAsCloud.addActionListener(this::actionPerformed);
         image2SaveAsCloud.setActionCommand(SELECT_SAVE_AS_CLOUD);
 
+        comboBoxGitHisChoices.addActionListener(this::actionPerformed);
+        deleteButton.addActionListener(this::actionPerformed);;
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (SELECT_SAVE_AS_STRING.equals(e.getActionCommand())) {
+        changeVisibleBySaveType(e.getActionCommand());
+
+        changeComBoxGitChoices(e.getActionCommand());
+     }
+
+     /**
+      * 选择git账号时改变git输入框中的选项
+      * @author zhang.heng
+      * @date 2020-04-17 23:48
+      * @Param: [actionCommand]
+      * @return void
+      * @throws
+      * @taskId
+     */
+    private void changeComBoxGitChoices(String actionCommand) {
+        if (!COMBO_BOX_CHANGED.equals(actionCommand)) {
+            return;
+        }
+        ComBoxGitDto dto = (ComBoxGitDto) comboBoxGitHisChoices.getSelectedItem();
+        if (dto == null) {
+            return;
+        }
+        //若更改了提交用户，则修改最终账户信息，若和当前展示值一致不做处理
+        // 【判断标准 localPath remoteRepoUri  userName 一致】
+        if (dto.getLocalPath().equals(textFieldLocalPath.getText())
+                && dto.getRemoteRepoUri().equals(textFieldRemoteRepoUrl.getText())
+                && dto.getUserName().equals(textFieldGitUserName.getText())) {
+            return;
+        }
+        textFieldLocalPath.setText(dto.getLocalPath());
+        textFieldRemoteRepoUrl.setText(dto.getRemoteRepoUri());
+        textFieldGitUserName.setText(dto.getUserName());
+        textFieldGitUserPassword.setText(dto.getPassword());
+        textFieldGitUserPassword.setEchoChar('*');
+    }
+
+    /**
+     * 根据保存方式设置哪些是可见的
+     * @param selectedType
+     */
+    private void changeVisibleBySaveType(String selectedType) {
+        if (SELECT_SAVE_AS_STRING.equals(selectedType)) {
             mode = "0";
             panel1.setVisible(true);
             label3.setVisible(false);
             directoryField.setVisible(false);
             panel2.setVisible(false);
             panel4.setVisible(false);
+            panel5.setVisible(false);
+
         }
-        else if (SELECT_SAVE_AS_FILE.equals(e.getActionCommand())) {
+        else if (SELECT_SAVE_AS_FILE.equals(selectedType)) {
             mode = "1";
             label3.setVisible(true);
             directoryField.setVisible(true);
             panel1.setVisible(true);
             panel2.setVisible(true);
             panel4.setVisible(true);
+            panel5.setVisible(false);
+
         }
-        else if (SELECT_SAVE_AS_CLOUD.equals(e.getActionCommand())) {
+        else if (SELECT_SAVE_AS_CLOUD.equals(selectedType)) {
             mode = "2";
-            panel1.setVisible(false);
-            panel2.setVisible(false);
-            panel4.setVisible(false);
+            panel1.setVisible(true);
+            panel2.setVisible(true);
+            panel4.setVisible(true);
+
+            panel5.setVisible(true);
+
+            String gitConfig = PropertiesComponent.getInstance().getValue("PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG", "");
+            if (!"".equals(gitConfig)) {
+                Gson gson = new Gson();
+                GitDto gitDto = gson.fromJson(gitConfig, GitDto.class);
+                textFieldLocalPath.setText(gitDto.getLocalPath());
+                textFieldRemoteRepoUrl.setText(gitDto.getRemoteRepoUri());
+                textFieldGitUserName.setText(gitDto.getUserName());
+                textFieldGitUserPassword.setText(gitDto.getPassword());
+                textFieldGitUserPassword.setEchoChar('*');
+            }
+
+            String gitConfigHisChoics = PropertiesComponent.getInstance().getValue("PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG_HIS_CHOICES", "");
+//
+            Gson gson = new Gson();
+//            List<GitDto> gitDtoList = new ArrayList<GitDto>();
+//            Boolean existFlag = false;
+//            if (StringUtils.isNotEmpty(gitConfigHisChoics)) {
+//
+//                gitDtoList = gson.fromJson(gitConfigHisChoics, new TypeToken<List<GitDto>>(){}.getType());
+//                Iterator<GitDto> iterator = gitDtoList.iterator();
+//                while (iterator.hasNext()) {
+//                    comboBoxGitHisChoices.addItem(iterator.next());
+//                    comboBoxGitHisChoices.disp
+//                }
+//
+//            }
+
         }
-     }
+    }
 
     public String getMode() {
         return mode;

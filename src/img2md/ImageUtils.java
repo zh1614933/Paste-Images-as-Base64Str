@@ -24,6 +24,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.MalformedURLException;
 import java.net.URL;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+import static org.herry.pic.helper.GgitOperate.commitFiles;
+import static org.herry.pic.helper.GgitOperate.pullBranchToLocal;
+import static org.herry.pic.helper.GgitOperate.setupRepo;
 
 
 public class ImageUtils {
@@ -200,7 +205,17 @@ public class ImageUtils {
 
 
     public static void main(String[] args) {
-        new ImageIcon("/Users/holger/Library/Application Support/Movito/covercache/backdrop/2f87c882b52b30a6.png");
+//        new ImageIcon("/Users/holger/Library/Application Support/Movito/covercache/backdrop/2f87c882b52b30a6.png");
+
+        String remoteRepoUri = "https://gitee.com/zhanghenry007/md-pic.git";
+        String a = remoteRepoUri.substring(0, remoteRepoUri.lastIndexOf(".git"));
+        testGgit();
+    }
+
+    private static void testGgit() {
+        setupRepo();
+        pullBranchToLocal();
+        commitFiles();
     }
 
 

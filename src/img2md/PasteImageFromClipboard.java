@@ -1,5 +1,8 @@
 package img2md;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.intellij.credentialStore.CredentialAttributes;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -27,11 +30,22 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 import javax.swing.JLabel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import org.apache.commons.lang.StringUtils;
+import org.herry.pic.dto.GitDto;
+import org.herry.pic.helper.GgitOperate;
+import static org.herry.pic.helper.GgitOperate.commitFiles;
+import static org.herry.pic.helper.GgitOperate.pullBranchToLocal;
+import static org.herry.pic.helper.GgitOperate.setupRepo;
 import org.jetbrains.annotations.NotNull;
 
 public class PasteImageFromClipboard extends AnAction {
@@ -93,26 +107,209 @@ public class PasteImageFromClipboard extends AnAction {
         String mode = insertSettingsPanel.getMode();
 
         if ("0".equals(mode)) {
-            optionForSaveAsString(ed, bufferedImage);
+            optionForSaveAsString(ed, insertSettingsPanel, bufferedImage);
         }
-        else if ("1".equals(mode)) { //保存为文件
+        else if ("1".equals(mode)) {
+            //保存为文件
             optionForSaveAsFile(ed, insertSettingsPanel, bufferedImage);
         }
-        else if ("2".equals(mode)) { //保存到云
-            //TODO
-            return;
+        else if ("2".equals(mode)) {
+            //保存到云
+            optionForSaveAsCloud(ed, insertSettingsPanel, bufferedImage);
         }
     }
 
-    private void optionForSaveAsString(Editor ed, BufferedImage bufferedImage) {
+    /**
+     * 保存到git上
+     * China： gitee
+     * other:  github
+     * @param ed
+     * @param insertSettingsPanel
+     * @param bufferedImage
+     */
+    private void optionForSaveAsCloud(Editor ed, ImageInsertSettingsPanel insertSettingsPanel, BufferedImage bufferedImage) {
+        Document currentDoc = FileEditorManager.getInstance(ed.getProject()).getSelectedTextEditor().getDocument();
+        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
+        File curDocument = new File(currentFile.getPath());
+
+        //图片名字
+        String imageName = insertSettingsPanel.getNameInput().getText();
+        boolean whiteAsTransparent = insertSettingsPanel.getWhiteCheckbox().isSelected();
+        boolean roundCorners = insertSettingsPanel.getRoundCheckbox().isSelected();
+        double scalingFactor = ((Integer) insertSettingsPanel.getScaleSpinner().getValue()) * 0.01;
+
+        //git相关的设置
+        String localPath = insertSettingsPanel.getTextFieldLocalPath().getText();
+        String remoteRepoUri = insertSettingsPanel.getTextFieldRemoteRepoUrl().getText();
+        String userName = insertSettingsPanel.getTextFieldGitUserName().getText();
+        String userPassword = insertSettingsPanel.getTextFieldGitUserPassword().getText();
+        String localGitFile = localPath + ".git";
+
+
+
+        if (whiteAsTransparent) {
+            bufferedImage = toBufferedImage(whiteToTransparent(bufferedImage));
+        }
+//
+        if (roundCorners) {
+            bufferedImage = toBufferedImage(makeRoundedCorner(bufferedImage, 20));
+        }
+
+        if (scalingFactor != 1) {
+            bufferedImage = scaleImage(bufferedImage,
+                    (int) Math.round(bufferedImage.getWidth() * scalingFactor),
+                    (int) Math.round(bufferedImage.getHeight() * scalingFactor));
+        }
+
+        // make selectable
+//        File imageDir = new File(curDocument.getParent(), ".images");
+        String mdBaseName = curDocument.getName().replace(".md", "").replace(".Rmd", "");
+
+//        File imageDir = new File(curDocument.getParent(), "."+ mdBaseName +"_images");
+        String dirPattern = insertSettingsPanel.getDirectoryField().getText();
+
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yy-MM-dd");
+        String imageFatherDir = sdf.format(new Date()) + "/";
+        //生成唯一识别的序列号，用以区分不同图片,为图片的父目录
+        imageFatherDir += UUID.randomUUID().toString();
+
+        File imageDir = new File(localPath, imageFatherDir);
+
+
+        if (!imageDir.exists() || !imageDir.isDirectory()) {
+            imageDir.mkdirs();
+        }
+
+
+        File imageFile = new File(imageDir, imageName);
+
+        // todo should we silently override the image if it is already present?
+        save(bufferedImage, imageFile, "png");
+
+        //提交
+        GgitOperate.setupRepo(localPath, remoteRepoUri, userName, userPassword);
+        GgitOperate.pullBranchToLocal(localGitFile, userName, userPassword);
+        GgitOperate.commitFiles(localGitFile, userName, userPassword);
+
+        GitDto gitDto = new GitDto();
+        gitDto.setLocalPath(localPath);
+        gitDto.setLocalGitFile(localGitFile);
+        gitDto.setRemoteRepoUri(remoteRepoUri);
+        gitDto.setUserName(userName);
+        gitDto.setPassword(userPassword);
+
+        addToGitConfigChoices(gitDto);
+
+        String httpLink = convertHttpLink(remoteRepoUri, imageFatherDir, imageName);
+        //markdown中图片链接 ctrl + v 后粘贴后的内容 格式：  ![image][linkIdString]
+        String addImageLink = "![" + imageName + "](" + httpLink + ")";
+
+        //将转换好的 图片链接插入光标
+        insertImageElement(ed, "\n\n" +addImageLink + "\n\n");
+
+        // inject image element current markdown document
+//        insertImageElement(ed, curDocument.getParentFile().toPath().relativize(imageFile.toPath()).toFile());
+
+        // https://intellij-support.jetbrains.com/hc/en-us/community/posts/206144389-Create-virtual-file-from-file-path
+        VirtualFile fileByPath = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(imageFile);
+        assert fileByPath != null;
+
+        AbstractVcs usedVcs = ProjectLevelVcsManager.getInstance(ed.getProject()).getVcsFor(fileByPath);
+        if (usedVcs != null && usedVcs.getCheckinEnvironment() != null) {
+            usedVcs.getCheckinEnvironment().scheduleUnversionedFilesForAddition(Collections.singletonList(fileByPath));
+        }
+
+
+        // update directory pattern preferences for file and globally
+        PropertiesComponent.getInstance().setValue("PI__LAST_DIR_PATTERN", dirPattern);
+        PropertiesComponent.getInstance().setValue("PI__DIR_PATTERN_FOR_" + currentFile.getPath(), dirPattern);
+
+    }
+
+    /**
+     * @author zhang.heng
+     * @date 2020-04-12 03:48
+     * @Param: [gitDto]
+     * @return void
+     * 若用户进行了修改或添加账户的操作，
+     * 以 在PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG_HIS_CHOICES 中
+     * 存在 remoteRepoUri和  userName 都一样为已经存在的账户
+     * 否则添加新增或者修改的到 PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG_HIS_CHOICES
+     * @throws
+     * @taskId
+    */
+    private void addToGitConfigChoices(GitDto gitDto) {
+        if (null == gitDto) {
+            return;
+        }
+        Gson gson = new Gson();
+        List<GitDto> gitDtoList = new ArrayList<GitDto>();
+
+        //存储当前的git账户
+        PropertiesComponent.getInstance().setValue("PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG", gson.toJson(gitDto));
+
+        String gitConfigHisChoics = PropertiesComponent.getInstance().getValue("PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG_HIS_CHOICES", "");
+
+        Boolean existFlag = false;
+        if (StringUtils.isNotEmpty(gitConfigHisChoics)) {
+
+            gitDtoList = gson.fromJson(gitConfigHisChoics, new TypeToken<List<GitDto>>(){}.getType());
+            Iterator<GitDto> iterator = gitDtoList.iterator();
+            while (iterator.hasNext()) {
+                GitDto itera = (GitDto) iterator.next();
+                if (itera.getUserName().equals(gitDto.getUserName())
+                && itera.getRemoteRepoUri().equals(gitDto.getRemoteRepoUri())) {
+                    existFlag = true;
+
+                    if (!itera.getLocalPath().equals(gitDto.getLocalPath())) {
+                        itera.setLocalPath(gitDto.getLocalPath());
+                    }
+                    break;
+                }
+            }
+        }
+        if (!existFlag){
+            gitDtoList.add(gitDto);
+        }
+        PropertiesComponent.getInstance().setValue("PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG_HIS_CHOICES", gson.toJson(gitDtoList));
+
+    }
+
+
+    /**
+     * @author zhang.heng
+     * @date 2020-04-07 17:31
+     * @Param: [remoteRepoUri, imageFatherDir, imageName]
+     * @return java.lang.String
+     * @throws
+     * @taskId
+    */
+    private String convertHttpLink(String remoteRepoUri, String imageFatherDir, String imageName) {
+//        https://gitee.com/zhanghenry007/md-pic/raw/master/te12st.png
+        String httpLink = "";
+        httpLink = remoteRepoUri.substring(0, remoteRepoUri.lastIndexOf(".git"))
+                + "/raw/master/" + imageFatherDir + "/"+ imageName;
+        return httpLink;
+    }
+
+    /**
+     * 图片转换成base64str保存
+     * @param ed
+     * @param bufferedImage
+     */
+    private void optionForSaveAsString(Editor ed, ImageInsertSettingsPanel insertSettingsPanel, BufferedImage bufferedImage) {
         //bufferedImage  2  Base64String
         String bufferImage2Base64String = bufferImage2Base64String(bufferedImage);
 
         //生成唯一识别的序列号，用以区分不同图片
         String linkIdString = UUID.randomUUID().toString();
 
+        //图片名字
+        String imageName = insertSettingsPanel.getNameInput().getText();
+
         //markdown中图片链接 ctrl + v 后粘贴后的内容 格式：  ![image][linkIdString]
-        String addImageLink = "![image][" + linkIdString + "]";
+        String addImageLink = "![" + imageName + "][" + linkIdString + "]";
 
         //markdown中 文章末尾的bufferImage2Base64String详细内容
         //格式  ： [linkIdString]:data:image/png;base64,bufferImage2Base64String
@@ -174,6 +371,7 @@ public class PasteImageFromClipboard extends AnAction {
 //        File imageDir = new File(curDocument.getParent(), "."+ mdBaseName +"_images");
         String dirPattern = insertSettingsPanel.getDirectoryField().getText();
 
+        dirPattern += "/" + UUID.randomUUID().toString();
 
         File imageDir = new File(curDocument.getParent(), dirPattern.replace(DOC_BASE_NAME, mdBaseName));
 
@@ -314,7 +512,8 @@ public class PasteImageFromClipboard extends AnAction {
             dirPattern = propComp.getValue("PI__LAST_DIR_PATTERN");
         }
         //if (dirPattern == null) dirPattern = "." + DOC_BASE_NAME + "_images";
-        dirPattern = "." ;
+        String curDocumentPath = curDocument.getPath();
+        dirPattern = "." + curDocumentPath.substring(curDocumentPath.lastIndexOf("\\"), curDocumentPath.lastIndexOf(".")) ;
 
         contentPanel.getDirectoryField().setText(dirPattern);
 
