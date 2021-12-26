@@ -4,24 +4,31 @@
 
 package img2md;
 
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Vector;
+
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JRadioButton;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
+import javax.swing.border.TitledBorder;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.util.text.StringUtil;
 
-import com.intellij.ui.components.JBComboBoxLabel;
-import groovy.swing.binding.JComboBoxProperties;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Vector;
-import javax.swing.*;
-import javax.swing.border.TitledBorder;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import javax.swing.event.ListDataListener;
-import org.apache.commons.lang.StringUtils;
-import org.eclipse.jgit.api.Git;
 import org.herry.pic.dto.ComBoxGitDto;
 import org.herry.pic.dto.GitDto;
 
@@ -306,9 +313,18 @@ public class ImageInsertSettingsPanel extends JPanel implements ActionListener {
         String gitConfigHisChoics = PropertiesComponent.getInstance().getValue("PASTE_IMAGES_AS_BASE64STR_GIT_CONFIG_HIS_CHOICES", "");
         Gson gson = new Gson();
         Vector<ComBoxGitDto> gitDtoList = new Vector<ComBoxGitDto>();
-        gitDtoList = gson.fromJson(gitConfigHisChoics, new TypeToken<Vector<ComBoxGitDto>>(){}.getType());
+        if (StringUtil.isNotEmpty(gitConfigHisChoics)) {
+            gitDtoList = gson.fromJson(gitConfigHisChoics, new TypeToken<Vector<ComBoxGitDto>>(){}.getType());
+        }
 
         comboBoxGitHisChoices = new JComboBox(gitDtoList);
+
+//        ComboBoxModel<ComBoxGitDto> gitDtoList = new ListModel<ComBoxGitDto>();
+//        if (StringUtil.isNotEmpty(gitConfigHisChoics)) {
+//            gitDtoList = gson.fromJson(gitConfigHisChoics, new TypeToken<Vector<ComBoxGitDto>>(){}.getType());
+//        }
+//        comboBoxGitHisChoices = new ComboBox(gitDtoList);
+
         //======== this ========
         setLayout(new GridBagLayout());
         ((GridBagLayout) getLayout()).columnWidths = new int[]{0, 0};

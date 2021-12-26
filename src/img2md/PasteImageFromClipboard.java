@@ -1,8 +1,23 @@
 package img2md;
 
+import java.awt.Dimension;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
+
+import javax.swing.JLabel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.intellij.credentialStore.CredentialAttributes;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
@@ -19,6 +34,12 @@ import com.intellij.openapi.vcs.AbstractVcs;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+
+import org.apache.commons.lang.StringUtils;
+import org.herry.pic.dto.GitDto;
+import org.herry.pic.helper.GgitOperate;
+import org.jetbrains.annotations.NotNull;
+
 import static img2md.ImageUtils.bufferImage2Base64String;
 import static img2md.ImageUtils.getImageFromClipboard;
 import static img2md.ImageUtils.makeRoundedCorner;
@@ -26,27 +47,6 @@ import static img2md.ImageUtils.save;
 import static img2md.ImageUtils.scaleImage;
 import static img2md.ImageUtils.toBufferedImage;
 import static img2md.ImageUtils.whiteToTransparent;
-import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
-import javax.swing.JLabel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import org.apache.commons.lang.StringUtils;
-import org.herry.pic.dto.GitDto;
-import org.herry.pic.helper.GgitOperate;
-import static org.herry.pic.helper.GgitOperate.commitFiles;
-import static org.herry.pic.helper.GgitOperate.pullBranchToLocal;
-import static org.herry.pic.helper.GgitOperate.setupRepo;
-import org.jetbrains.annotations.NotNull;
 
 public class PasteImageFromClipboard extends AnAction {
 

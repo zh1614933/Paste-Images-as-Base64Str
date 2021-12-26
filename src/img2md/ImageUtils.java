@@ -1,11 +1,13 @@
 package img2md;
 
 
-import org.bouncycastle.util.encoders.Base64;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import java.awt.*;
+import java.awt.AlphaComposite;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -21,11 +23,14 @@ import java.awt.image.RGBImageFilter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.net.MalformedURLException;
 import java.net.URL;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
+
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
+
+import org.bouncycastle.util.encoders.Base64;
+
 import static org.herry.pic.helper.GgitOperate.commitFiles;
 import static org.herry.pic.helper.GgitOperate.pullBranchToLocal;
 import static org.herry.pic.helper.GgitOperate.setupRepo;

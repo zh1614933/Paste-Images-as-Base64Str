@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>github.com.zh1614933.Paste-Images-as-Base64Str</id>
   <name>Paste Images as Base64Str</name>
-  <version>1.0.1</version>
+  <version>1.0.2</version>
   <vendor email="1614933708@qq.com" url="https://github.com/zh1614933/Paste-Images-as-Base64Str"/>
 
   <!--see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html-->
@@ -21,6 +21,7 @@
             <li>Paste handler to use default ctrl-v to paste clipboard images</li>
             <li>You can choose your save method, save as image file or string</li>
             <li>The Images is converted to a string and saved at the end of the article</li>
+            <li>fix bug that Npe in IC-213.5744.223</li>
         </ul>
         ]]>
   </change-notes>

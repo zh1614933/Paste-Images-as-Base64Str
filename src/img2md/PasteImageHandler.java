@@ -26,6 +26,9 @@
  */
 package img2md;
 
+import java.awt.Image;
+import java.awt.datatransfer.Transferable;
+
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -41,9 +44,9 @@ import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.Producer;
-import java.awt.Image;
-import java.awt.datatransfer.Transferable;
+
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  *
@@ -97,8 +100,9 @@ public class PasteImageHandler extends EditorActionHandler implements EditorText
         }
     }
 
+
     @Override
-    public void execute(Editor editor, DataContext dataContext, Producer<Transferable> producer) {
+    public void execute(Editor editor, DataContext dataContext, @Nullable Producer<? extends Transferable> producer) {
 
     }
 }
